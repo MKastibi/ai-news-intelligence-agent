@@ -1,13 +1,13 @@
 # AI News Intelligence Agent
 
-A Python tool that fetches the latest AI news from multiple RSS feeds, generates a structured Dutch-language briefing using an LLM of your choice, and sends it to a Telegram chat.
+A Python tool that fetches the latest AI news from multiple RSS feeds, generates a structured English-language briefing using an LLM of your choice, and sends it to a Telegram chat.
 
 ## Features
 
 - **Multi-source RSS aggregation** – TechCrunch AI, The Verge AI, VentureBeat AI, and Artificial Intelligence News
 - **Smart deduplication** – removes duplicate articles by title
 - **Provider-agnostic LLM layer** – swap between OpenAI, OpenRouter, and Ollama without changing code
-- **Dutch-language briefing** – structured summary with key developments, analysis, opportunities, risks, and sources
+- **English-language briefing** – structured summary with key developments, analysis, opportunities, risks, and sources
 - **Telegram delivery** – sends the briefing directly to your Telegram chat with automatic message splitting
 - **Production-ready** – clean config validation, error handling, type hints, and dependency injection
 
@@ -82,7 +82,7 @@ python run.py
 The script will:
 1. Validate your configuration (including provider-specific API keys).
 2. Fetch articles from all RSS feeds.
-3. Generate a Dutch briefing via your configured LLM provider.
+3. Generate a briefing via your configured LLM provider.
 4. Send the briefing to your Telegram chat.
 
 ## Architecture
@@ -104,6 +104,54 @@ app/
 
 The summarization layer depends only on the `LLMProvider` abstraction. Adding a new provider (Anthropic, Gemini, Groq) requires only a new file in `app/llm/` and a new entry in the factory.
 
+## GitHub Actions
+
+This repository includes a CI/CD workflow at `.github/workflows/daily-news.yml` that runs the agent automatically every day.
+
+### Schedule
+
+The workflow runs daily at **06:00 UTC**. To change the schedule, edit the `cron` expression in `.github/workflows/daily-news.yml`:
+
+```yaml
+schedule:
+  - cron: "0 6 * * *"
+```
+
+The format is `minute hour day month weekday`. GitHub Actions uses UTC for all scheduled events.
+
+### Secrets Configuration
+
+The workflow reads all configuration from [GitHub Actions secrets](https://docs.github.com/en/actions/security-guides/using-secrets-in-github-actions).
+
+1. Go to your repository on GitHub.
+2. Navigate to **Settings** → **Secrets and variables** → **Actions**.
+3. Click **New repository secret** and add each of the following:
+
+| Secret                 | Required               | Description                          |
+|------------------------|------------------------|--------------------------------------|
+| `LLM_PROVIDER`         | Yes                    | LLM backend (`openai`, `openrouter`, `ollama`) |
+| `MODEL`                | Yes                    | Model name (e.g. `qwen/qwen3-32b`)   |
+| `OPENAI_API_KEY`       | If provider is `openai` | OpenAI API key                       |
+| `OPENROUTER_API_KEY`   | If provider is `openrouter` | OpenRouter API key               |
+| `OLLAMA_BASE_URL`      | No (default: `http://localhost:11434`) | Ollama server URL      |
+| `TELEGRAM_BOT_TOKEN`   | Yes                    | Telegram bot token                   |
+| `TELEGRAM_CHAT_ID`     | Yes                    | Target chat ID                       |
+
+### Manual Trigger
+
+You can trigger the workflow manually at any time:
+
+1. Go to your repository on GitHub.
+2. Click the **Actions** tab.
+3. Select **Daily AI News Briefing** in the left sidebar.
+4. Click **Run workflow** → **Run workflow**.
+
+A new run will start immediately.
+
+### Viewing Logs
+
+Click on any workflow run to see detailed logs for each step, including output from the agent and any errors.
+
 ## Security
 
 **.env contains sensitive credentials. Never commit it to version control.**
@@ -115,7 +163,7 @@ The `.gitignore` is configured to exclude `.env` by default. Always verify befor
 - [ ] Google Gemini provider
 - [ ] Groq provider
 - [ ] Customisable RSS feed list via config
-- [ ] Scheduled execution (cron / GitHub Actions)
+- [x] Scheduled execution (cron / GitHub Actions)
 - [ ] CLI flags for one-off vs. continuous mode
 
 ## License
