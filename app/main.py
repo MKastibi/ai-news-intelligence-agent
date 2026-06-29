@@ -1,9 +1,10 @@
-from typing import List, Dict, Any
+from typing import List
 
-from app.config import Config
-from app.news_fetcher import fetch_news
-from app.summarizer import summarize
-from app.telegram_sender import send_telegram_message
+from app.core.config import Config
+from app.models.article import Article
+from app.services.news_fetcher import fetch_news
+from app.services.summarizer import summarize
+from app.services.telegram_sender import send_telegram_message
 
 
 def run() -> None:
@@ -16,7 +17,7 @@ def run() -> None:
     print("  [OK] Configuration valid.\n")
 
     print("Fetching news from RSS feeds...")
-    articles: List[Dict[str, Any]] = fetch_news()
+    articles: List[Article] = fetch_news()
     print(f"\n  Total unique articles: {len(articles)}\n")
 
     if not articles:

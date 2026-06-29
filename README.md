@@ -1,28 +1,26 @@
 # AI News Intelligence Agent
 
-A Python tool that fetches the latest AI news from multiple RSS feeds, generates a structured English-language briefing using an LLM of your choice, and sends it to a Telegram chat.
+A Python tool that fetches the latest AI news from multiple RSS feeds, generates a structured English briefing using an LLM of your choice, and sends it to a Telegram chat.
 
 ## Features
 
-- **Multi-source RSS aggregation** – TechCrunch AI, The Verge AI, VentureBeat AI, and Artificial Intelligence News
-- **Smart deduplication** – removes duplicate articles by title
+- **Multi-source RSS aggregation** – TechCrunch AI, The Verge AI, VentureBeat AI, Artificial Intelligence News
+- **Smart deduplication** – removes duplicate articles by lowercase title
 - **Provider-agnostic LLM layer** – swap between OpenAI, OpenRouter, and Ollama without changing code
-- **English-language briefing** – structured summary with key developments, analysis, opportunities, risks, and sources
+- **English briefing** – structured summary with key developments, analysis, opportunities, risks, and sources
 - **Telegram delivery** – sends the briefing directly to your Telegram chat with automatic message splitting
-- **Production-ready** – clean config validation, error handling, type hints, and dependency injection
+- **Scheduled or manual execution** – runs daily at 06:00 UTC via GitHub Actions, with manual trigger support
+- **Production-ready** – clean architecture, dependency injection, custom exceptions, and type hints throughout
 
 ## Installation
 
 ```bash
-# Clone the repository
 git clone https://github.com/yourusername/ai-news-intelligence-agent.git
 cd ai-news-intelligence-agent
 
-# Create and activate a virtual environment
 python -m venv venv
 source venv/bin/activate  # On Windows: venv\Scripts\activate
 
-# Install dependencies
 pip install -r requirements.txt
 ```
 
@@ -56,11 +54,12 @@ Copy `.env.example` to `.env` and fill in your values:
 ```env
 LLM_PROVIDER=openrouter
 MODEL=qwen/qwen3-32b
-OPENAI_API_KEY=
-OPENROUTER_API_KEY=
-OLLAMA_BASE_URL=http://localhost:11434
-TELEGRAM_BOT_TOKEN=your_telegram_bot_token_here
-TELEGRAM_CHAT_ID=your_telegram_chat_id_here
+
+OPENROUTER_API_KEY=your_openrouter_api_key
+OPENAI_API_KEY=your_openai_api_key
+
+TELEGRAM_BOT_TOKEN=your_telegram_bot_token
+TELEGRAM_CHAT_ID=your_chat_id
 ```
 
 | Variable             | Required               | Default                  | Description                          |
@@ -80,48 +79,28 @@ python run.py
 ```
 
 The script will:
+
 1. Validate your configuration (including provider-specific API keys).
 2. Fetch articles from all RSS feeds.
 3. Generate a briefing via your configured LLM provider.
 4. Send the briefing to your Telegram chat.
 
-## Architecture
-
-```
-app/
-├── llm/
-│   ├── base.py              # Abstract LLMProvider interface
-│   ├── factory.py           # Provider selection (only class that instantiates providers)
-│   ├── openai_provider.py   # OpenAI implementation
-│   ├── openrouter_provider.py
-│   └── ollama_provider.py
-├── config.py                # Environment variable loading and validation
-├── news_fetcher.py          # RSS feed fetching and deduplication
-├── summarizer.py            # Prompt building and orchestration
-├── telegram_sender.py       # Telegram message delivery
-└── main.py                  # Application entry point
-```
-
-The summarization layer depends only on the `LLMProvider` abstraction. Adding a new provider (Anthropic, Gemini, Groq) requires only a new file in `app/llm/` and a new entry in the factory.
-
 ## GitHub Actions
 
-This repository includes a CI/CD workflow at `.github/workflows/daily-news.yml` that runs the agent automatically every day.
+A workflow at `.github/workflows/daily-news.yml` runs the agent automatically every day.
 
 ### Schedule
 
-The workflow runs daily at **06:00 UTC**. To change the schedule, edit the `cron` expression in `.github/workflows/daily-news.yml`:
+The workflow runs daily at **06:00 UTC**. To change the schedule, edit the `cron` expression:
 
 ```yaml
 schedule:
   - cron: "0 6 * * *"
 ```
 
-The format is `minute hour day month weekday`. GitHub Actions uses UTC for all scheduled events.
+GitHub Actions uses UTC for all scheduled events.
 
 ### Secrets Configuration
-
-The workflow reads all configuration from [GitHub Actions secrets](https://docs.github.com/en/actions/security-guides/using-secrets-in-github-actions).
 
 1. Go to your repository on GitHub.
 2. Navigate to **Settings** → **Secrets and variables** → **Actions**.
@@ -129,42 +108,53 @@ The workflow reads all configuration from [GitHub Actions secrets](https://docs.
 
 | Secret                 | Required               | Description                          |
 |------------------------|------------------------|--------------------------------------|
-| `LLM_PROVIDER`         | Yes                    | LLM backend (`openai`, `openrouter`, `ollama`) |
-| `MODEL`                | Yes                    | Model name (e.g. `qwen/qwen3-32b`)   |
-| `OPENAI_API_KEY`       | If provider is `openai` | OpenAI API key                       |
-| `OPENROUTER_API_KEY`   | If provider is `openrouter` | OpenRouter API key               |
-| `OLLAMA_BASE_URL`      | No (default: `http://localhost:11434`) | Ollama server URL      |
+| `LLM_PROVIDER`         | Yes                    | LLM backend                          |
+| `MODEL`                | Yes                    | Model name                           |
+| `OPENAI_API_KEY`       | If provider is `openai` | OpenAI API key                      |
+| `OPENROUTER_API_KEY`   | If provider is `openrouter` | OpenRouter API key              |
+| `OLLAMA_BASE_URL`      | No                     | Ollama server URL                    |
 | `TELEGRAM_BOT_TOKEN`   | Yes                    | Telegram bot token                   |
 | `TELEGRAM_CHAT_ID`     | Yes                    | Target chat ID                       |
 
 ### Manual Trigger
-
-You can trigger the workflow manually at any time:
 
 1. Go to your repository on GitHub.
 2. Click the **Actions** tab.
 3. Select **Daily AI News Briefing** in the left sidebar.
 4. Click **Run workflow** → **Run workflow**.
 
-A new run will start immediately.
-
-### Viewing Logs
-
-Click on any workflow run to see detailed logs for each step, including output from the agent and any errors.
-
 ## Security
 
 **.env contains sensitive credentials. Never commit it to version control.**
 The `.gitignore` is configured to exclude `.env` by default. Always verify before pushing.
 
+See [`docs/security.md`](docs/security.md) for a detailed guide on secret management and what to do if you accidentally push a key.
+
+## Architecture
+
+```
+app/
+├── core/                  # Cross-cutting concerns (config, logging, exceptions)
+├── llm/                   # LLM provider abstraction (abstract base + implementations)
+├── models/                # Domain models (Article dataclass)
+├── prompts/               # LLM prompt templates
+├── services/              # Business logic (news_fetcher, summarizer, telegram_sender)
+└── main.py                # Application entry point
+```
+
+The summarisation layer depends only on the `LLMProvider` abstraction. Adding a new provider (Anthropic, Gemini, Groq) requires only a new file in `app/llm/` and a new entry in the factory.
+
 ## Roadmap
 
-- [ ] Anthropic Claude provider
-- [ ] Google Gemini provider
-- [ ] Groq provider
-- [ ] Customisable RSS feed list via config
-- [x] Scheduled execution (cron / GitHub Actions)
-- [ ] CLI flags for one-off vs. continuous mode
+See [`docs/roadmap.md`](docs/roadmap.md) for the full roadmap.
+
+## Contributing
+
+1. Fork the repository.
+2. Create a feature branch (`git checkout -b feature/my-feature`).
+3. Commit your changes (`git commit -m 'Add my feature'`).
+4. Push to the branch (`git push origin feature/my-feature`).
+5. Open a Pull Request.
 
 ## License
 

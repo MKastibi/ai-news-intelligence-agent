@@ -1,4 +1,4 @@
-from app.config import Config
+from app.core.config import Config
 from app.llm.base import LLMProvider
 from app.llm.openai_provider import OpenAIProvider
 from app.llm.openrouter_provider import OpenRouterProvider

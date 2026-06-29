@@ -1,14 +1,13 @@
-import logging
 from typing import List
 
 import requests
 
-from app.config import Config
-
-logger = logging.getLogger(__name__)
+from app.core.config import Config
+from app.core.exceptions import APIError
 
 TELEGRAM_API_URL = "https://api.telegram.org/bot{token}/sendMessage"
 MAX_MESSAGE_LENGTH = 4096
+REQUEST_TIMEOUT = 15
 
 
 def _split_message(text: str, max_length: int = MAX_MESSAGE_LENGTH) -> List[str]:
@@ -37,9 +36,9 @@ def send_telegram_message(text: str) -> None:
     for i, part in enumerate(parts):
         payload["text"] = part
         try:
-            response = requests.post(url, json=payload, timeout=15)
+            response = requests.post(url, json=payload, timeout=REQUEST_TIMEOUT)
             response.raise_for_status()
-            logger.info("Telegram part %d/%d sent successfully", i + 1, len(parts))
         except requests.RequestException as e:
-            logger.error("Failed to send Telegram part %d/%d: %s", i + 1, len(parts), e)
-            raise
+            raise APIError(
+                f"Failed to send Telegram message part {i + 1}/{len(parts)}: {e}"
+            ) from e

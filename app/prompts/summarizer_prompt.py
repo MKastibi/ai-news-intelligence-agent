@@ -1,6 +1,6 @@
-from typing import List, Dict, Any
+from typing import List
 
-from app.llm import create_provider
+from app.models.article import Article
 
 SYSTEM_PROMPT = (
     "You are an AI news analyst. You receive a list of the latest AI articles. "
@@ -19,22 +19,12 @@ SYSTEM_PROMPT = (
 )
 
 
-def build_prompt(articles: List[Dict[str, Any]]) -> str:
+def build_summarizer_prompt(articles: List[Article]) -> str:
     lines: List[str] = ["Here are the latest AI articles:\n"]
     for i, article in enumerate(articles, 1):
         lines.append(
-            f"{i}. **{article['title']}**\n"
-            f"   {article['summary'][:300]}\n"
-            f"   Source: {article['source']} | {article['link']}\n"
+            f"{i}. **{article.title}**\n"
+            f"   {article.summary[:300]}\n"
+            f"   Source: {article.source} | {article.link}\n"
         )
-    return "\n".join(lines)
-
-
-def summarize(articles: List[Dict[str, Any]]) -> str:
-    if not articles:
-        return "No news articles found to summarise."
-
-    provider = create_provider()
-    user_prompt = build_prompt(articles)
-    full_prompt = f"{SYSTEM_PROMPT}\n\n{user_prompt}"
-    return provider.summarize(full_prompt)
+    return f"{SYSTEM_PROMPT}\n\n{''.join(lines)}"
