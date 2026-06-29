@@ -7,6 +7,7 @@ Automate your AI news briefing. Fetches the latest articles from top AI RSS feed
 - **Multi-source RSS aggregation** — TechCrunch AI, The Verge AI, VentureBeat AI, Artificial Intelligence News
 - **Smart deduplication** — removes duplicates by lowercase title before summarisation
 - **Provider-agnostic LLM layer** — swap between OpenAI, OpenRouter, and Ollama with one env var
+- **Per-article intelligence analysis** — impact score, category, mentioned companies, target audience, and build opportunities
 - **Structured English briefing** — key developments, analysis, opportunities, risks, sources
 - **Telegram delivery** — automatic message splitting (handles >4096 chars)
 - **Scheduled or manual execution** — daily at 06:00 UTC via GitHub Actions, with `workflow_dispatch` fallback

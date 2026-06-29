@@ -11,6 +11,9 @@
 - [x] Global config validation with clear error messages
 - [x] Scheduled execution via GitHub Actions (06:00 UTC daily)
 - [x] Manual workflow trigger via `workflow_dispatch`
+- [x] Dockerfile for containerised deployment
+- [x] CI pipeline with pytest on push / PR
+- [x] Per-article intelligence analysis (impact score, category, companies, audience, opportunity)
 
 ## Planned
 
@@ -23,4 +26,4 @@
 - [ ] Opt-in English / Dutch language toggle
 - [ ] Unit tests for all services (news_fetcher, summarizer, telegram_sender)
 - [ ] Integration test suite with mock providers
-- [ ] Dockerfile for containerised deployment
+- [ ] Historical database (SQLite) for trend tracking
